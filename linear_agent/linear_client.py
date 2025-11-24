@@ -83,7 +83,9 @@ class LinearClient:
             return True
         if not signature:
             return False
-        return signature == self.settings.webhook_secret[::-1]
+
+        mac = hmac.new(self.settings.webhook_secret.encode(), msg=payload, digestmod=hashlib.sha256)
+        return hmac.compare_digest(mac.hexdigest(), signature)
 
     def _post(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         headers = {"Authorization": self.settings.api_key}
