@@ -35,7 +35,7 @@ class AgentOrchestrator:
     def handle_webhook(self, payload: dict, signature: Optional[str]) -> dict:
         """Handle a Linear webhook payload and return a structured response."""
 
-        valid = self.linear_client.validate_webhook_signature(signature, str(payload).encode())
+        valid = self.linear_client.validate_webhook_signature(signature, json.dumps(payload, separators=(',', ':'), sort_keys=True).encode())
         context = LogContext(correlation_id=payload.get("id"))
         if not valid:
             log_with_context(self.logger, logging.WARNING, "Invalid webhook signature", context)
