@@ -16,7 +16,11 @@ export class MCPServer {
   private handlers: Map<string, ToolHandler>;
 
   constructor(private linearClient: LinearClient) {
-    this.server = new Server(mcpConfig.serverInfo, mcpConfig.capabilities);
+    this.server = new Server(mcpConfig, {
+      capabilities: {
+        tools: {}
+      }
+    });
     this.tools = new Map();
     this.handlers = new Map();
     this.setupHandlers();
@@ -52,7 +56,8 @@ export class MCPServer {
       }
 
       logger.info(`Executing tool: ${toolName}`);
-      return await handler(request.params.arguments || {});
+      const result = await handler(request.params.arguments || {});
+      return result as any;
     });
 
     logger.info(`Registered ${this.tools.size} tools`);

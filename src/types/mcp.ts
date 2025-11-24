@@ -1,10 +1,10 @@
 // MCP types
 export interface MCPTool {
   name: string;
-  description: string;
+  description?: string;
   inputSchema: {
     type: 'object';
-    properties: Record<string, any>;
+    properties?: Record<string, any>;
     required?: string[];
   };
 }

@@ -31,8 +31,7 @@ export class LinearClient {
 
       const issues = await this.client.issues({
         filter: filterObj,
-        first: limit,
-        orderBy: 'updatedAt'
+        first: limit
       });
 
       const result: LinearIssue[] = [];
@@ -126,9 +125,9 @@ export class LinearClient {
 
   async searchIssues(query: string, limit: number = 20): Promise<LinearIssue[]> {
     try {
-      const issues = await this.client.issueSearch(query, {
-        first: limit,
-        filter: { team: { id: { eq: this.teamId } } }
+      const issues = await this.client.issueSearch({
+        query,
+        first: limit
       });
 
       const result: LinearIssue[] = [];
@@ -147,7 +146,6 @@ export class LinearClient {
   async listProjects(limit: number = 50): Promise<LinearProject[]> {
     try {
       const projects = await this.client.projects({
-        filter: { team: { id: { eq: this.teamId } } },
         first: limit
       });
 
@@ -254,9 +252,9 @@ export class LinearClient {
         name: project.name
       } : undefined,
       team: {
-        id: team.id,
-        name: team.name,
-        key: team.key
+        id: team?.id || '',
+        name: team?.name || 'Unknown',
+        key: team?.key || ''
       },
       labels: labels.nodes.map(label => ({
         id: label.id,
@@ -270,10 +268,12 @@ export class LinearClient {
   }
 
   private async formatProject(project: Project): Promise<LinearProject> {
-    const [team, lead] = await Promise.all([
-      project.team,
+    const [teams, lead] = await Promise.all([
+      project.teams(),
       project.lead
     ]);
+
+    const firstTeam = teams.nodes[0];
 
     return {
       id: project.id,
@@ -283,9 +283,12 @@ export class LinearClient {
       progress: project.progress,
       startDate: project.startDate?.toISOString(),
       targetDate: project.targetDate?.toISOString(),
-      team: {
-        id: team.id,
-        name: team.name
+      team: firstTeam ? {
+        id: firstTeam.id,
+        name: firstTeam.name
+      } : {
+        id: '',
+        name: 'Unknown'
       },
       lead: lead ? {
         id: lead.id,
