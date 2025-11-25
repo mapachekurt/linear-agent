@@ -1,0 +1,15 @@
+{"timestamp": "2025-11-24T21:32:17.021470", "agent_id": "agent-1", "action": "github:opened", "parameters": null, "success": true, "error_message": null, "context": null}
+{"timestamp": "2025-11-24T21:33:55.335009+00:00", "agent_id": "agent-1", "action": "linear:create", "parameters": null, "success": true, "error_message": null, "context": null}
+{"timestamp": "2025-11-24T21:33:55.597303+00:00", "agent_id": "agent-1", "action": "github:opened", "parameters": null, "success": true, "error_message": null, "context": null}
+{"timestamp": "2025-11-24T21:37:09.999778+00:00", "agent_id": "agent-1", "action": "linear:create", "parameters": null, "success": true, "error_message": null, "context": null}
+{"timestamp": "2025-11-24T21:37:10.193858+00:00", "agent_id": "agent-1", "action": "github:opened", "parameters": null, "success": true, "error_message": null, "context": null}
+{"timestamp": "2025-11-24T21:41:24.730120+00:00", "agent_id": "agent-1", "action": "linear:create", "parameters": null, "success": true, "error_message": null, "context": null}
+{"timestamp": "2025-11-24T21:41:25.007798+00:00", "agent_id": "agent-1", "action": "github:opened", "parameters": null, "success": true, "error_message": null, "context": null}
+{"timestamp": "2025-11-25T07:24:47.793311+00:00", "agent_id": "agent-1", "action": "linear:create", "parameters": null, "success": true, "error_message": null, "context": null}
+{"timestamp": "2025-11-25T07:24:48.046303+00:00", "agent_id": "agent-1", "action": "github:opened", "parameters": null, "success": true, "error_message": null, "context": null}
+{"timestamp": "2025-11-25T07:35:05.658819+00:00", "agent_id": "default-agent", "action": "linear:create", "parameters": null, "success": true, "error_message": null, "context": null}
+{"timestamp": "2025-11-25T07:35:06.074039+00:00", "agent_id": "default-agent", "action": "github:opened", "parameters": null, "success": true, "error_message": null, "context": null}
+{"timestamp": "2025-11-25T07:37:00.819413+00:00", "agent_id": "default-agent", "action": "linear:create", "parameters": null, "success": true, "error_message": null, "context": null}
+{"timestamp": "2025-11-25T07:37:01.066944+00:00", "agent_id": "default-agent", "action": "github:opened", "parameters": null, "success": true, "error_message": null, "context": null}
+{"timestamp": "2025-11-25T08:13:55.474011+00:00", "agent_id": "default-agent", "action": "linear:create", "parameters": null, "success": true, "error_message": null, "context": null}
+{"timestamp": "2025-11-25T08:13:55.717313+00:00", "agent_id": "default-agent", "action": "github:opened", "parameters": null, "success": true, "error_message": null, "context": null}
