@@ -84,50 +84,45 @@ class TestHealthMonitor:
         assert isinstance(report, HealthReport)
         assert report.overall_status == HealthStatus.HEALTHY
 
-    def test_update_linear_quota(self, monitor: HealthMonitor) -> None:
+    async def test_update_linear_quota(self, monitor: HealthMonitor) -> None:
         """Test updating Linear quota."""
         # First do a health check to initialize the report
-        import asyncio
-        asyncio.get_event_loop().run_until_complete(monitor.check_health())
+        await monitor.check_health()
 
         monitor.update_linear_quota(remaining=500, limit=1000)
         assert monitor.last_report is not None
         assert monitor.last_report.linear.quota.remaining == 500
         assert monitor.last_report.linear.quota.limit == 1000
 
-    def test_update_github_quota(self, monitor: HealthMonitor) -> None:
+    async def test_update_github_quota(self, monitor: HealthMonitor) -> None:
         """Test updating GitHub quota."""
-        import asyncio
-        asyncio.get_event_loop().run_until_complete(monitor.check_health())
+        await monitor.check_health()
 
         monitor.update_github_quota(remaining=4000, limit=5000)
         assert monitor.last_report is not None
         assert monitor.last_report.github.quota.remaining == 4000
 
-    def test_record_linear_error(self, monitor: HealthMonitor) -> None:
+    async def test_record_linear_error(self, monitor: HealthMonitor) -> None:
         """Test recording Linear error."""
-        import asyncio
-        asyncio.get_event_loop().run_until_complete(monitor.check_health())
+        await monitor.check_health()
 
         monitor.record_linear_error("Test error")
         assert monitor.last_report is not None
         assert monitor.last_report.linear.last_error == "Test error"
         assert monitor.last_report.linear.status == HealthStatus.DEGRADED
 
-    def test_record_github_error(self, monitor: HealthMonitor) -> None:
+    async def test_record_github_error(self, monitor: HealthMonitor) -> None:
         """Test recording GitHub error."""
-        import asyncio
-        asyncio.get_event_loop().run_until_complete(monitor.check_health())
+        await monitor.check_health()
 
         monitor.record_github_error("GitHub error")
         assert monitor.last_report is not None
         assert monitor.last_report.github.last_error == "GitHub error"
         assert monitor.last_report.github.status == HealthStatus.DEGRADED
 
-    def test_clear_errors(self, monitor: HealthMonitor) -> None:
+    async def test_clear_errors(self, monitor: HealthMonitor) -> None:
         """Test clearing errors."""
-        import asyncio
-        asyncio.get_event_loop().run_until_complete(monitor.check_health())
+        await monitor.check_health()
 
         monitor.record_linear_error("Error 1")
         monitor.record_github_error("Error 2")
@@ -142,10 +137,9 @@ class TestHealthMonitor:
         """Test quota exhausted check when not exhausted."""
         assert monitor.is_quota_exhausted() is False
 
-    def test_is_quota_exhausted_true(self, monitor: HealthMonitor) -> None:
+    async def test_is_quota_exhausted_true(self, monitor: HealthMonitor) -> None:
         """Test quota exhausted check when exhausted."""
-        import asyncio
-        asyncio.get_event_loop().run_until_complete(monitor.check_health())
+        await monitor.check_health()
 
         monitor.update_linear_quota(remaining=0, limit=1000)
         assert monitor.is_quota_exhausted() is True
@@ -154,19 +148,17 @@ class TestHealthMonitor:
         """Test getting current status."""
         assert monitor.get_status() == HealthStatus.HEALTHY
 
-    def test_overall_status_unhealthy(self, monitor: HealthMonitor) -> None:
+    async def test_overall_status_unhealthy(self, monitor: HealthMonitor) -> None:
         """Test overall status becomes unhealthy."""
-        import asyncio
-        asyncio.get_event_loop().run_until_complete(monitor.check_health())
+        await monitor.check_health()
 
         monitor.update_linear_quota(remaining=0, limit=1000)
         assert monitor.last_report is not None
         assert monitor.last_report.overall_status == HealthStatus.UNHEALTHY
 
-    def test_overall_status_degraded(self, monitor: HealthMonitor) -> None:
+    async def test_overall_status_degraded(self, monitor: HealthMonitor) -> None:
         """Test overall status becomes degraded."""
-        import asyncio
-        asyncio.get_event_loop().run_until_complete(monitor.check_health())
+        await monitor.check_health()
 
         # Low quota (< 20%)
         monitor.update_linear_quota(remaining=50, limit=1000)
