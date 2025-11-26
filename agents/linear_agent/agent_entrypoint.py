@@ -14,14 +14,11 @@ try:  # Prefer the Vertex AI preview namespace when available
 except ImportError:  # pragma: no cover - fallback for alternate installation layouts
     from google.cloud.aiplatform import agentbuilder  # type: ignore
 
-from .coding_agents import load_coding_agents, select_coding_agent
+from .coding_agents import load_coding_agents
 from .connectors import GitHubConnector, LinearConnector
 from .core import Issue, classify_surfaces, choose_route, estimate_size, prioritize_issue
 from .orchestrator import LinearProductAgent
-from .classification import TicketClassifier
-from .prioritization import TicketPrioritizer
-from .routing import RoutingDecider
-from .shaping import LeanTicketShaper, RawTicket
+from .shaping import RawTicket
 from .models import TicketContext, TicketSource
 
 
@@ -34,10 +31,6 @@ _product_agent = LinearProductAgent(
     github=_github_connector,
     coding_agents=_coding_agents,
 )
-_shaper = LeanTicketShaper()
-_classifier = TicketClassifier()
-_prioritizer = TicketPrioritizer()
-_router = RoutingDecider()
 
 
 @agentbuilder.tool
@@ -66,19 +59,12 @@ def analyze_issue(issue: Dict[str, Any]) -> Dict[str, Any]:
         issue_id=issue.get("issue_id"),
         raw_payload=issue,
     )
-    lean = _shaper.shape(raw, context)
-    classification = _classifier.classify(lean, context)
-    prioritized = _prioritizer.score(classification, lean)
-    routing = _router.route(
-        prioritized,
-        status=context.status,
-        select_agent=lambda prioritized_ticket: _select_agent(prioritized_ticket, context),
-    )
+    plan = _product_agent.analyze_ticket(raw, context)
     return {
-        "lean_ticket": asdict(lean),
-        "classification": asdict(classification),
-        "priority": asdict(prioritized),
-        "routing": asdict(routing),
+        "lean_ticket": asdict(plan.lean_ticket),
+        "classification": asdict(plan.classification),
+        "priority": asdict(plan.priority),
+        "routing": asdict(plan.routing),
     }
 
 
@@ -99,12 +85,6 @@ def route_core_issue(issue: Dict[str, Any]) -> Dict[str, Any]:
     route = choose_route(core_issue)
     priority = prioritize_issue(core_issue, context={})
     return {"surfaces": sorted(surfaces), "size": size, "route": route, "priority": priority}
-
-
-def _select_agent(prioritized_ticket, context: TicketContext) -> Optional[str]:
-    job_id = context.issue_id or prioritized_ticket.lean_ticket.title
-    agent = select_coding_agent(prioritized_ticket.classification, _coding_agents, job_id=job_id)
-    return agent.name if agent else None
 
 
 root_agent = agentbuilder.LlmAgent(
