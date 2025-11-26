@@ -1,0 +1,6 @@
+{
+  "agents": [
+    {"name": "copilot-alpha", "surfaces": ["solutions", "app"], "max_concurrent": 3},
+    {"name": "copilot-bridge", "surfaces": ["bridge"], "max_concurrent": 2}
+  ]
+}
