@@ -1,6 +1,7 @@
 """Primary orchestrator for the Linear agent."""
 from __future__ import annotations
 
+import json
 import logging
 from typing import Callable, Dict, Optional
 
@@ -35,7 +36,8 @@ class AgentOrchestrator:
     def handle_webhook(self, payload: dict, signature: Optional[str]) -> dict:
         """Handle a Linear webhook payload and return a structured response."""
 
-        valid = self.linear_client.validate_webhook_signature(signature, str(payload).encode())
+        body = json.dumps(payload, separators=(",", ":")).encode()
+        valid = self.linear_client.validate_webhook_signature(signature, body)
         context = LogContext(correlation_id=payload.get("id"))
         if not valid:
             log_with_context(self.logger, logging.WARNING, "Invalid webhook signature", context)
