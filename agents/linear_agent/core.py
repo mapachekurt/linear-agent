@@ -571,3 +571,173 @@ class LinearAgentCore:
             )
 
         return None
+
+
+# =============================================================================
+# Simplified Interface Functions
+# =============================================================================
+# These functions provide a simpler interface for testing per AgentSpec.md
+
+
+def _issue_to_linear_issue(issue: dict | object) -> LinearIssue:
+    """Convert a dict or simple dataclass to LinearIssue."""
+    if isinstance(issue, dict):
+        title = issue.get("title", "")
+        description = issue.get("description", "")
+        labels = issue.get("labels", [])
+        linked_repos = issue.get("linked_repos", [])
+    else:
+        # Assume it's a dataclass or object with attributes
+        title = getattr(issue, "title", "")
+        description = getattr(issue, "description", "")
+        labels = getattr(issue, "labels", [])
+        linked_repos = getattr(issue, "linked_repos", [])
+
+    # Append linked repos to description for surface classification
+    if linked_repos:
+        repos_text = "\nLinked repos: " + ", ".join(linked_repos)
+        description = description + repos_text
+
+    return LinearIssue(
+        id="test-issue",
+        identifier="TEST-1",
+        title=title,
+        description=description,
+        labels=labels,
+    )
+
+
+def classify_surface(issue: dict | object) -> set[str]:
+    """
+    Classify issue by product surface.
+
+    Args:
+        issue: Dict or dataclass with title, description, labels, source, linked_repos
+
+    Returns:
+        Set of surface names: "solutions", "app", "bridge"
+    """
+    core = LinearAgentCore()
+    linear_issue = _issue_to_linear_issue(issue)
+    surfaces = core.classify_surfaces(linear_issue)
+    return {s.value.replace("surface:", "") for s in surfaces}
+
+
+def estimate_size(issue: dict | object) -> str:
+    """
+    Estimate issue size for routing.
+
+    Args:
+        issue: Dict or dataclass with title, description, labels
+
+    Returns:
+        Size string: "small", "medium", "large"
+    """
+    core = LinearAgentCore()
+    linear_issue = _issue_to_linear_issue(issue)
+    size = core.estimate_size(linear_issue)
+    return size.value.replace("size:", "")
+
+
+def choose_route(issue: dict | object) -> str:
+    """
+    Choose execution route for an issue.
+
+    Args:
+        issue: Dict or dataclass with title, description, labels
+
+    Returns:
+        Route string: "copilot-agent", "copilot-chat", "manual"
+    """
+    core = LinearAgentCore()
+    linear_issue = _issue_to_linear_issue(issue)
+    surfaces = core.classify_surfaces(linear_issue)
+    size = core.estimate_size(linear_issue)
+    decision = core.decide_route(linear_issue, size, surfaces)
+    return decision.route.value.replace("route:", "")
+
+
+def leanify_description(issue: dict | object) -> str:
+    """
+    Convert bloated description to Lean format.
+
+    Args:
+        issue: Dict or dataclass with title, description
+
+    Returns:
+        Lean-formatted description as markdown string
+    """
+    core = LinearAgentCore()
+    linear_issue = _issue_to_linear_issue(issue)
+    surfaces = core.classify_surfaces(linear_issue)
+    lean_ticket = core.leanify(linear_issue, surfaces)
+    return lean_ticket.to_markdown()
+
+
+def prioritize(issue: dict | object, context: dict | None = None) -> int:
+    """
+    Calculate priority for an issue.
+
+    Args:
+        issue: Dict or dataclass with title, description, labels, source
+        context: Optional context dict (unused for now)
+
+    Returns:
+        Priority rank: 1 (highest) to 4 (lowest)
+    """
+    core = LinearAgentCore()
+    linear_issue = _issue_to_linear_issue(issue)
+    surfaces = core.classify_surfaces(linear_issue)
+    source = core.detect_source(linear_issue)
+    result = core.calculate_priority_score(linear_issue, surfaces, source)
+    return result.priority_rank or 4
+
+
+def detect_misrouting(
+    issue: dict | object,
+    actual_route: str,
+    actual_size: str,
+) -> dict | None:
+    """
+    Detect if routing was likely wrong.
+
+    Args:
+        issue: Dict or dataclass with title, description, labels
+        actual_route: The route that was chosen ("copilot-agent", "copilot-chat", "manual")
+        actual_size: The size that was estimated ("small", "medium", "large")
+
+    Returns:
+        Dict with needs_improvement=True if misrouted, None otherwise
+    """
+    core = LinearAgentCore()
+    linear_issue = _issue_to_linear_issue(issue)
+
+    # Convert string to enum
+    route_map = {
+        "copilot-agent": ExecutionRoute.COPILOT_AGENT,
+        "copilot-chat": ExecutionRoute.COPILOT_CHAT,
+        "manual": ExecutionRoute.MANUAL,
+    }
+    size_map = {
+        "small": IssueSize.SMALL,
+        "medium": IssueSize.MEDIUM,
+        "large": IssueSize.LARGE,
+    }
+
+    route_enum = route_map.get(actual_route)
+    size_enum = size_map.get(actual_size)
+
+    if not route_enum or not size_enum:
+        return None
+
+    improvement = core.detect_misrouting(linear_issue, route_enum, size_enum)
+
+    if improvement:
+        return {
+            "needs_improvement": True,
+            "severity": improvement.severity,
+            "why_wrong": improvement.why_wrong,
+            "suggested_adjustment": improvement.suggested_adjustment,
+        }
+
+    return None
