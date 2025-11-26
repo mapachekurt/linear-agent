@@ -1,0 +1,102 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Dict, Mapping, Optional, Set
+
+
+AgentName = str  # e.g. "copilot", "codex", "gemini", "chatgpt", "claude", "jules"
+
+
+@dataclass
+class IssueTraits:
+    """Minimal, agent-agnostic view of a Linear issue for routing decisions."""
+    id: str
+    task_kind: str           # "repo_code", "gcp_infra", "refactor", "scaffolding", ...
+    urgency: float           # 0.0–1.0
+    risk: float              # 0.0–1.0 (blast radius / business risk)
+    needs_repo_awareness: bool
+
+
+@dataclass
+class AgentCapacity:
+    """Current load for an agent family."""
+    in_flight: int
+    max_concurrent_jobs: int
+
+
+@dataclass
+class AgentConfig:
+    """Loaded from coding_agents.yaml for one agent family."""
+    name: AgentName
+    speed: float
+    cost: float
+    repo_awareness: float
+    obedience: float
+    best_for: Set[str]
+    max_concurrent_jobs: int
+
+
+@dataclass
+class AgentChoice:
+    agent_name: AgentName
+    score: float
+    reason: str
+
+
+def select_coding_agent(
+    issue: IssueTraits,
+    capacities: Mapping[AgentName, AgentCapacity],
+    configs: Mapping[AgentName, AgentConfig],
+) -> Optional[AgentChoice]:
+    """
+    Select the best coding agent family for this issue, given current capacities
+    and static agent configs.
+
+    This does NOT actually dispatch any work – it only chooses which agent
+    *should* be used. The caller is responsible for recording the assignment
+    and enforcing any higher-level policies (e.g. auto_level:assist / semi / full).
+    """
+    # Tunable weights – move to config if needed.
+    w_speed = 0.4
+    w_cost = 0.2
+    w_repo = 0.2
+    w_best_for = 0.15
+    w_obedience = 0.05
+
+    best_choice: Optional[AgentChoice] = None
+
+    for name, cfg in configs.items():
+        cap = capacities.get(name, AgentCapacity(in_flight=0, max_concurrent_jobs=cfg.max_concurrent_jobs))
+
+        # Skip agents that are at capacity
+        if cap.in_flight >= cfg.max_concurrent_jobs:
+            continue
+
+        # Base score components
+        speed_component = cfg.speed * issue.urgency
+        cost_component = (1.0 - cfg.cost) * (1.0 - issue.urgency)
+        repo_component = cfg.repo_awareness if issue.needs_repo_awareness else 0.0
+        best_for_component = 1.0 if issue.task_kind in cfg.best_for else 0.0
+        obedience_component = cfg.obedience * issue.risk
+
+        score = (
+            w_speed * speed_component
+            + w_cost * cost_component
+            + w_repo * repo_component
+            + w_best_for * best_for_component
+            + w_obedience * obedience_component
+        )
+
+        if best_choice is None or score > best_choice.score:
+            reason_parts = []
+            if issue.needs_repo_awareness:
+                reason_parts.append(f"repo_awareness={cfg.repo_awareness:.2f}")
+            if issue.task_kind in cfg.best_for:
+                reason_parts.append(f"best_for={issue.task_kind}")
+            reason_parts.append(f"speed={cfg.speed:.2f}")
+            reason_parts.append(f"cost={cfg.cost:.2f}")
+            reason = "; ".join(reason_parts)
+
+            best_choice = AgentChoice(agent_name=name, score=score, reason=reason)
+
+    return best_choice
