@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "linear-agent"
-version = "0.1.0"
-description = "Autonomous Linear agent for issue management with self-learning and GitHub integration"
+version = "0.3.0"
+description = "Linear Product Management Agent for Mapache - backlog shaping, prioritization, and routing"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
@@ -41,7 +41,7 @@ linear-agent = "linear_agent.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["linear_agent*"]
+include = ["linear_agent*", "agents*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
