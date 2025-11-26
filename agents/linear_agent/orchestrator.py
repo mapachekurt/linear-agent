@@ -12,7 +12,7 @@ from .models import ActionPlan, LeanTicket, PrioritizedTicket, RoutingDecision
 from .models import Surface, TicketContext, TicketSize, TicketSource
 from .prioritization import TicketPrioritizer
 from .routing import RoutingDecider
-from .shaping import LeanTicketShaper
+from .shaping import LeanTicketShaper, RawTicket
 
 
 @dataclass
@@ -53,6 +53,14 @@ class LinearProductAgent:
         if not self.linear.validate_webhook(payload, signature):
             raise ValueError("Invalid webhook signature")
         raw_ticket, context = self.linear.parse_ticket(payload)
+        return self.analyze_ticket(raw_ticket, context)
+
+    def analyze_ticket(self, raw_ticket: RawTicket, context: TicketContext) -> ActionPlan:
+        """Shape, classify, prioritize, and route a pre-parsed ticket.
+
+        This method encapsulates the core orchestration pipeline and can be
+        called directly when you already have a parsed ticket and context.
+        """
         lean_ticket = self.shaper.shape(raw_ticket, context)
         classification = self.classifier.classify(lean_ticket, context)
         priority = self.prioritizer.score(classification, lean_ticket)
