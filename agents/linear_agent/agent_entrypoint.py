@@ -1,8 +1,8 @@
 """Agent Engine entrypoint for the Mapache Linear Product Management Agent.
 
 This module builds the ADK-compatible ``root_agent`` object that Vertex AI Agent
-Engine expects. The tools exposed here wrap the orchestrator, core routing
-helpers, and coding-agent selection logic described in ``AgentSpec.md``.
+Engine expects. The tools exposed here wrap the orchestrator and coding-agent
+selection logic described in ``AgentSpec.md``.
 """
 from __future__ import annotations
 
@@ -16,7 +16,6 @@ except ImportError:  # pragma: no cover - fallback for alternate installation la
 
 from .coding_agents import load_coding_agents, select_coding_agent
 from .connectors import GitHubConnector, LinearConnector
-from .core import Issue, classify_surfaces, choose_route, estimate_size, prioritize_issue
 from .orchestrator import LinearProductAgent
 from .classification import TicketClassifier
 from .prioritization import TicketPrioritizer
@@ -82,25 +81,6 @@ def analyze_issue(issue: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-@agentbuilder.tool
-def route_core_issue(issue: Dict[str, Any]) -> Dict[str, Any]:
-    """Expose the lightweight core helpers for routing and sizing."""
-
-    core_issue = Issue(
-        title=issue.get("title", "Untitled"),
-        description=issue.get("description", ""),
-        labels=issue.get("labels", []) or [],
-        source=issue.get("source"),
-        linked_repos=issue.get("linked_repos", []),
-        metadata=issue.get("metadata", {}) or {},
-    )
-    surfaces = classify_surfaces(core_issue)
-    size = estimate_size(core_issue)
-    route = choose_route(core_issue)
-    priority = prioritize_issue(core_issue, context={})
-    return {"surfaces": sorted(surfaces), "size": size, "route": route, "priority": priority}
-
-
 def _select_agent(prioritized_ticket, context: TicketContext) -> Optional[str]:
     job_id = context.issue_id or prioritized_ticket.lean_ticket.title
     agent = select_coding_agent(prioritized_ticket.classification, _coding_agents, job_id=job_id)
@@ -109,7 +89,7 @@ def _select_agent(prioritized_ticket, context: TicketContext) -> Optional[str]:
 
 root_agent = agentbuilder.LlmAgent(
     model="gemini-2.0-flash",
-    tools=[process_linear_webhook, analyze_issue, route_core_issue],
+    tools=[process_linear_webhook, analyze_issue],
     instructions=(
         "You are the Mapache Linear Product Management Agent. Use Lean ticket shaping, "
         "surface classification (solutions, app, bridge), size estimation, and routing "
