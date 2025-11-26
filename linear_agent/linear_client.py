@@ -1,6 +1,8 @@
 """Linear API client abstractions."""
 from __future__ import annotations
 
+import hashlib
+import hmac
 from dataclasses import dataclass
 from typing import Any, Dict, Protocol
 
@@ -73,17 +75,24 @@ class LinearClient:
         return response["data"]["issueUpdate"]["issue"]["state"]["name"]
 
     def validate_webhook_signature(self, signature: str | None, payload: bytes) -> bool:
-        """Validate webhook payloads using the configured secret.
+        """Validate webhook payloads using HMAC-SHA256 verification.
 
-        In production this should use HMAC verification. Here we only perform
-        presence checks to keep the implementation dependency-free.
+        Args:
+            signature: The signature from the webhook request header.
+            payload: The raw request body as bytes.
+
+        Returns:
+            True if the signature is valid or no secret is configured, False otherwise.
         """
 
         if self.settings.webhook_secret is None:
             return True
         if not signature:
             return False
-        return signature == self.settings.webhook_secret[::-1]
+        digest = hmac.new(
+            self.settings.webhook_secret.encode(), payload, hashlib.sha256
+        ).hexdigest()
+        return hmac.compare_digest(digest, signature)
 
     def _post(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         headers = {"Authorization": self.settings.api_key}
