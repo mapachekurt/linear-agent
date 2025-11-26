@@ -22,6 +22,10 @@ SOURCE_PACKAGES = ["agents", "config", REQUIREMENTS_FILE]
 
 
 def main() -> None:
+    if "PROJECT_ID" not in os.environ:
+        raise ValueError("PROJECT_ID environment variable is required")
+    if "LOCATION" not in os.environ:
+        raise ValueError("LOCATION environment variable is required")
     project_id = os.environ["PROJECT_ID"]
     location = os.environ["LOCATION"]
 
