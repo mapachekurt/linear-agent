@@ -22,8 +22,8 @@ SOURCE_PACKAGES = ["agents", "config", REQUIREMENTS_FILE]
 
 
 def main() -> None:
-    project_id = os.environ.get("PROJECT_ID", "YOUR_PROJECT_ID")
-    location = os.environ.get("LOCATION", "YOUR_LOCATION")
+    project_id = os.environ["PROJECT_ID"]
+    location = os.environ["LOCATION"]
 
     client = Client(project=project_id, location=location)
 
