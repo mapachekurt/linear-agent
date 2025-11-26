@@ -1,0 +1,47 @@
+name: Deploy Linear Agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: "GCP project to deploy into"
+        required: true
+        type: string
+      location:
+        description: "Agent Engine region (e.g. us-central1)"
+        required: true
+        type: string
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: ${{ inputs.project_id || secrets.GCP_PROJECT_ID }}
+      LOCATION: ${{ inputs.location || secrets.GCP_LOCATION }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Authenticate to Google Cloud
+        # TODO: Provide a service account key JSON via a GitHub secret (e.g. GCP_SA_KEY)
+        # and export GOOGLE_APPLICATION_CREDENTIALS before deployment. Example:
+        # echo "${{ secrets.GCP_SA_KEY }}" > ${HOME}/gcp-key.json
+        # echo "GOOGLE_APPLICATION_CREDENTIALS=${HOME}/gcp-key.json" >> $GITHUB_ENV
+        run: |
+          echo "Skipping auth configuration. Set GOOGLE_APPLICATION_CREDENTIALS in a prior step."
+
+      - name: Deploy Linear Agent to Agent Engine
+        env:
+          PROJECT_ID: ${{ env.PROJECT_ID }}
+          LOCATION: ${{ env.LOCATION }}
+        run: python deploy_linear_agent.py
