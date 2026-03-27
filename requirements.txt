@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+httpx
+python-dotenv
+PyJWT
+cryptography
+python-jose
+pytest
+pytest-asyncio
+respx
+pytest-cov
